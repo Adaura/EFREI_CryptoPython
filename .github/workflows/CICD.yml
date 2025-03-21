@@ -1,27 +1,31 @@
 name: Industrialisation continue sur le serveur Alwaysdata
+
 on: push
+
 jobs:
   Connexion:
     runs-on: ubuntu-latest
     steps:
-      - name: Connexion SSH avec le serveur
+      - name: Connexion SSH avec le serveur Alwaysdata
         uses: appleboy/ssh-action@master
         with:
           host: "ssh-${{ secrets.USERNAME }}.alwaysdata.net"
           username: ${{ secrets.USERNAME }}
-          password: ${{ secrets.PASSWORD }}
+          key: ${{ secrets.SSH_KEY }}
           script: |
             cd $HOME/www/
+            ls -la
+
   Copy:
     needs: Connexion
     runs-on: ubuntu-latest
     steps:
-      - name: Connexion SSH avec le serveur
+      - name: Connexion SSH avec le serveur Alwaysdata
         uses: appleboy/ssh-action@master
         with:
           host: "ssh-${{ secrets.USERNAME }}.alwaysdata.net"
           username: ${{ secrets.USERNAME }}
-          password: ${{ secrets.PASSWORD }}
+          key: ${{ secrets.SSH_KEY }}
           script: |
             last_directory=$(basename ${{ runner.workspace }})
             cd $HOME/www/
@@ -34,6 +38,7 @@ jobs:
               echo "Le répertoire flask de destination sur votre serveur n'existe pas"
               exit 1
             fi
+
   Restart:
     needs: Copy
     runs-on: ubuntu-latest
@@ -45,12 +50,12 @@ jobs:
           if [ "$response_code" -eq 204 ]; then
             echo "Relance de votre site réussi"
           elif [ "$response_code" -eq 404 ]; then
-            echo "Vous n'avez pas renseigner correctement votre secret ALWAYSDATA_SITE_ID"
-            exit 1  # Quitter avec un code d'erreur
+            echo "Vous n'avez pas renseigné correctement votre secret ALWAYSDATA_SITE_ID"
+            exit 1
           elif [ "$response_code" -eq 401 ]; then
-            echo "Vous n'avez pas renseigner correctement votre secret ALWAYSDATA_TOKEN"
-          exit 1  # Quitter avec un code d'erreur
+            echo "Vous n'avez pas renseigné correctement votre secret ALWAYSDATA_TOKEN"
+            exit 1
           else
             echo "Échec du redémarrage avec le code de réponse : $response_code"
-            exit 1  # Quitter avec un code d'erreur
+            exit 1
           fi
